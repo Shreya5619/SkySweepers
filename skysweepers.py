@@ -73,16 +73,13 @@ def dustdetect(image):
     mask = np.ones((rows, cols), np.uint8)
     mask[crow-10:crow+10, :] = 0  # Horizontal lines
     mask[:, ccol-10:ccol+10] = 0  # Vertical lines
-
     # Apply the mask and inverse FFT
     fshift = fshift * mask
     f_ishift = np.fft.ifftshift(fshift)
     img_back = np.fft.ifft2(f_ishift)
     img_back = np.abs(img_back)
-
     # Convert to 8-bit for visualization
     img_back = cv2.normalize(img_back, None, 0, 255, cv2.NORM_MINMAX).astype(np.uint8)
-    cv2.imshow("Image",img_back)
     # Detect lines using Hough Transform
     lines = cv2.HoughLinesP(closed, 1, np.pi / 180, threshold=100, minLineLength=90, maxLineGap=10)
 
@@ -92,44 +89,39 @@ def dustdetect(image):
         for line in lines:
             x1, y1, x2, y2 = line[0]
             cv2.line(line_mask, (x1, y1), (x2, y2), 255, 2)
-
     # Invert the mask to remove lines
     line_removed = cv2.bitwise_not(line_mask)
     filtered_image = cv2.bitwise_and(image, image, mask=line_removed)
     # Thresholding the filtered image to detect dust
     _, dust_mask = cv2.threshold(filtered_image, 50, 255, cv2.THRESH_BINARY)
-
     # Combine the dust mask with the original to highlight dust areas
     dust_highlighted = cv2.bitwise_and(image, dust_mask)
     return dust_highlighted
 
 def calculate_white_percentage(binary_image):
-    
     # Calculate the number of white pixels (pixels with value 255)
-    white_pixels = np.sum(binary_image == 255)
+    white_pixels = np.sum(binary_image >= 140)
     
     # Calculate the total number of pixels
     total_pixels = binary_image.size
     
     # Calculate the percentage of white pixels
     white_percentage = (white_pixels / total_pixels) * 100
-    if(white_percentage>=0.01):
+    print(white_percentage)
+    if(white_percentage>=2):
         return 1
     else:
         return 0
 
-image = cv2.imread("C:\\Users\\Shreya Prasad\\Desktop\\Solartest2.jpg")
+image = cv2.imread("C:\\Users\\Shreya Prasad\\Desktop\\Solartest4.jpg")
 cv2.imshow("imagei",image)
-roi = cv2.resize(image,(512,512))
-cv2.imshow("img",image)
-cv2.imshow("img1",roi)
 
 
-roi = cv2.cvtColor(cv2.resize(roi,(512,512)), cv2.COLOR_BGR2GRAY)
+roi= cv2.cvtColor(cv2.resize(image,(512,512)), cv2.COLOR_BGR2GRAY)
 _, th4 = cv2.threshold(roi, 140, 255, cv2.THRESH_TOZERO)
 roi = cv2.adaptiveThreshold(th4, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 15, 2)
-
-cv2.imshow("thresh",dustdetect(th4))
+th4=dustdetect(th4)
+cv2.imshow("thresh",th4)
 
 print(calculate_white_percentage(th4))
 
